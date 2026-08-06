@@ -631,7 +631,7 @@
         }
 
         // ================================================================
-        //  ✅ 新增：倒计时功能
+        //  ✅ 倒计时功能
         // ================================================================
         let countdownInterval = null;
 
@@ -639,7 +639,6 @@
             const el = document.getElementById('countdownDisplay');
             if (!el) return;
 
-            // 清除之前的定时器
             if (countdownInterval) {
                 clearInterval(countdownInterval);
                 countdownInterval = null;
@@ -676,9 +675,7 @@
                 el.textContent = text;
             }
 
-            // 立即更新一次
             updateCountdown();
-            // 每秒更新
             countdownInterval = setInterval(updateCountdown, 1000);
         }
 
@@ -727,7 +724,6 @@
                 </div>
             `;
 
-            // ===== 元信息条：新增「浏览次数」和「倒计时」 =====
             html += `
                 <div class="meta-bar">
                     <span><i class="fa fa-calendar"></i> 创建：<span class="highlight">${data.createdAt}</span></span>
@@ -776,7 +772,6 @@
 
             container.innerHTML = html;
 
-            // ===== 启动倒计时 =====
             if (data.expiresAtTimestamp) {
                 startCountdown(data.expiresAtTimestamp);
             }
@@ -798,9 +793,22 @@
             `;
         }
 
+        // ================================================================
+        //  ✅ 核心：加载分享内容（支持两种方式获取 ID）
+        // ================================================================
         async function loadShareContent() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+            // 1. 先从查询参数获取 id (?id=xxx)
+            let params = new URLSearchParams(window.location.search);
+            let id = params.get('id');
+
+            // 2. 如果查询参数没有 id，尝试从路径中提取 (/xxxxxxxx)
+            if (!id) {
+                const pathParts = window.location.pathname.split('/');
+                const lastPart = pathParts[pathParts.length - 1];
+                if (/^[a-zA-Z0-9]{8}$/.test(lastPart)) {
+                    id = lastPart;
+                }
+            }
 
             if (!id) {
                 renderError('无效的分享 ID，请检查链接');
