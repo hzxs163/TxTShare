@@ -1,30 +1,47 @@
+// ================================================================
+//  通用分享处理器 - 同时支持 /view.html?id=xxx 和 /xxx
+// ================================================================
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const pathname = url.pathname;
 
   // ================================================================
-  //  ✅ 支持短链接：从路径中提取 ID
-  //  ================================================================
+  //  第一步：获取 ID（支持两种格式）
+  // ================================================================
   let id = url.searchParams.get('id');
 
-  // 如果查询参数中没有 id，尝试从路径中提取
+  // 如果查询参数没有 id，尝试从路径中提取
   if (!id) {
-    // 匹配 /xxxxxxx 格式（8位字母数字）
+    // 匹配 /xxxxxxxx（8位字母数字）
     const match = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
     if (match) {
       id = match[1];
     }
   }
 
-  // 如果还是没拿到 id，返回错误
-  if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
+  // ================================================================
+  //  第二步：如果还是没有 ID，说明是其他请求，直接放行
+  // ================================================================
+  if (!id) {
+    // 让请求继续走正常流程（由 Pages 静态托管处理）
+    return new Response(null, { status: 404 });
+  }
+
+  // ================================================================
+  //  第三步：验证 ID 格式
+  // ================================================================
+  if (!/^[a-zA-Z0-9]{8}$/.test(id)) {
     return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       status: 400
     });
   }
 
+  // ================================================================
+  //  第四步：从 KV 获取数据
+  // ================================================================
   try {
     const dataStr = await env.TEXT_SHARE_KV.get(`share:${id}`);
     if (!dataStr) {
@@ -46,7 +63,7 @@ export async function onRequest(context) {
     }
 
     // ================================================================
-    //  ✅ 新增：访问统计（阅后即焚已销毁的不再计数）
+    //  第五步：访问统计
     // ================================================================
     if (!data.burnAfterRead || !data.viewed) {
       data.viewCount = (data.viewCount || 0) + 1;
@@ -54,7 +71,7 @@ export async function onRequest(context) {
     }
 
     // ================================================================
-    //  阅后即焚处理
+    //  第六步：阅后即焚处理
     // ================================================================
     let isRead = false;
     if (data.burnAfterRead && !data.viewed) {
@@ -65,7 +82,7 @@ export async function onRequest(context) {
     }
 
     // ================================================================
-    //  计算剩余时间（用于显示）
+    //  第七步：计算剩余时间
     // ================================================================
     let expireTime = '';
     const diff = data.expiresAt - now;
@@ -78,7 +95,7 @@ export async function onRequest(context) {
     }
 
     // ================================================================
-    //  返回数据
+    //  第八步：返回数据
     // ================================================================
     return new Response(JSON.stringify({
       success: true,
@@ -88,7 +105,7 @@ export async function onRequest(context) {
         createdAt: new Date(data.createdAt).toLocaleString('zh-CN'),
         expireTime: expireTime,
         expiresAtTimestamp: data.expiresAt,
-        shareUrl: `${new URL(request.url).origin}/${id}`,  // ✅ 短链接格式
+        shareUrl: `${new URL(request.url).origin}/${id}`,
         burnAfterRead: data.burnAfterRead,
         isRead: isRead,
         viewCount: data.viewCount || 0
