@@ -1,5 +1,5 @@
 // ===== KV 绑定：TEXT_SHARE_KV =====
-
+console.log('✅ index.js 已加载');
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
