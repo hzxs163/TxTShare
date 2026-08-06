@@ -8,6 +8,14 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
+    // ================================================================
+    //  ✅ 规则0：静态资源直接放行
+    // ================================================================
+    // 如果请求的是 .html、.css、.js、.png 等静态文件，直接放行
+    if (pathname.match(/\.(html|css|js|woff2|woff|ttf|svg|png|ico|json)$/i)) {
+      return fetch(request);
+    }
+
     // 跨域配置
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
