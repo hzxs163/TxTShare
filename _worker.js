@@ -1,6 +1,7 @@
 // ================================================================
 //  _worker.js - 统一入口
 //  处理：/api/create、/api/view、短链接 /xxxxxxxx
+//  其他请求（包括 view.html）放行给 Pages 静态托管
 // ================================================================
 
 export default {
@@ -9,10 +10,9 @@ export default {
     const pathname = url.pathname;
 
     // ================================================================
-    //  ✅ 规则0：静态资源直接放行
+    //  规则0：非 API 和短链接的请求，全部放行给 Pages 静态托管
     // ================================================================
-    // 如果请求的是 .html、.css、.js、.png 等静态文件，直接放行
-    if (pathname.match(/\.(html|css|js|woff2|woff|ttf|svg|png|ico|json)$/i)) {
+    if (!pathname.startsWith('/api/') && !pathname.match(/^\/[a-zA-Z0-9]{8}$/)) {
       return fetch(request);
     }
 
@@ -49,7 +49,7 @@ export default {
       const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
       if (shortIdMatch) {
         const id = shortIdMatch[1];
-        // ✅ 重定向到 view.html，并带上 id 参数
+        // 重定向到 view.html，并带上 id 参数
         const redirectUrl = new URL(`/view.html?id=${id}`, request.url).toString();
         return Response.redirect(redirectUrl, 302);
       }
