@@ -245,7 +245,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             shareOptions.classList.remove('hidden');
 
-            const shareUrl = `${window.location.origin}/view.html?id=${data.id}`;
+            // ✅ 修改：直接使用后端返回的短链接
+            const shareUrl = data.shareUrl;
             const shareType = shareTypeSelect.value;
 
             if (shareType === 'both' || shareType === 'link') {
