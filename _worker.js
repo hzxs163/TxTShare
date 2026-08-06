@@ -41,12 +41,9 @@ export default {
       const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
       if (shortIdMatch) {
         const id = shortIdMatch[1];
-        // 把请求转换成 /api/view?id=xxx 格式
-        const newUrl = new URL(request.url);
-        newUrl.pathname = "/api/view";
-        newUrl.searchParams.set("id", id);
-        const newRequest = new Request(newUrl.toString(), request);
-        return await handleView(newRequest, env);
+        // ✅ 重定向到 view.html，并带上 id 参数
+        const redirectUrl = `/view.html?id=${id}`;
+        return Response.redirect(redirectUrl, 302);
       }
 
       // ================================================================
@@ -123,7 +120,7 @@ async function handleCreate(request, env) {
 }
 
 // ================================================================
-//  handleView - 查看分享
+//  handleView - 查看分享（返回 JSON 数据供 view.html 调用）
 // ================================================================
 async function handleView(request, env) {
   const url = new URL(request.url);
