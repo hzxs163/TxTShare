@@ -122,12 +122,15 @@
         <span>链接已复制到剪贴板</span>
     </div>
     
-    <!-- ========== ✅ 关键修改：在 app.js 前定义 API_BASE_URL ========== -->
+    <!-- ============================================================ -->
+    <!-- ✅ 修复：将 API_BASE_URL 挂载到 window 对象，使其成为全局变量 -->
+    <!-- ============================================================ -->
     <script>
-        // 定义 API 基础地址，自动适配当前域名
-        const API_BASE_URL = window.location.origin;
-        // 如果你需要固定域名，可以用下面这行替换上面那行：
-        // const API_BASE_URL = 'https://txt.step.cc.cd';
+        // 挂载到 window 对象，使 app.js 可以访问
+        window.API_BASE_URL = window.location.origin;
+        // 如果需要固定域名，用下面这行替换上面那行：
+        // window.API_BASE_URL = 'https://txt.step.cc.cd';
+        console.log('✅ API_BASE_URL 已设置为:', window.API_BASE_URL);
     </script>
     
     <script src="/js/app.js"></script>
