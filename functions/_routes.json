@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/api/*",
+    "/css/*",
+    "/js/*",
+    "/fonts/*",
+    "/images/*",
+    "/favicon.ico",
+    "/manifest.json",
+    "/sw.js",
+    "/view.html"
+  ]
+}
