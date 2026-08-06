@@ -1,8 +1,23 @@
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  const id = url.searchParams.get('id');
+  const pathname = url.pathname;
 
+  // ================================================================
+  //  ✅ 支持短链接：从路径中提取 ID
+  //  ================================================================
+  let id = url.searchParams.get('id');
+
+  // 如果查询参数中没有 id，尝试从路径中提取
+  if (!id) {
+    // 匹配 /xxxxxxx 格式（8位字母数字）
+    const match = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
+    if (match) {
+      id = match[1];
+    }
+  }
+
+  // 如果还是没拿到 id，返回错误
   if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
     return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -63,7 +78,7 @@ export async function onRequest(context) {
     }
 
     // ================================================================
-    //  返回数据（新增 viewCount 和 expiresAtTimestamp）
+    //  返回数据
     // ================================================================
     return new Response(JSON.stringify({
       success: true,
@@ -72,11 +87,11 @@ export async function onRequest(context) {
         content: data.content,
         createdAt: new Date(data.createdAt).toLocaleString('zh-CN'),
         expireTime: expireTime,
-        expiresAtTimestamp: data.expiresAt,  // ✅ 新增：用于前端倒计时
-        shareUrl: `${new URL(request.url).origin}/view.html?id=${id}`,
+        expiresAtTimestamp: data.expiresAt,
+        shareUrl: `${new URL(request.url).origin}/${id}`,  // ✅ 短链接格式
         burnAfterRead: data.burnAfterRead,
         isRead: isRead,
-        viewCount: data.viewCount || 0  // ✅ 新增：浏览次数
+        viewCount: data.viewCount || 0
       }
     }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
