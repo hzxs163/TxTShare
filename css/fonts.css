@@ -1,0 +1,19 @@
+/* ===== Inter 字体（可变字体，包含所有字重） ===== */
+@font-face {
+    font-family: 'Inter';
+    src: url('/fonts/inter/Inter-Variable.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: swap;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/fonts/inter/Inter-Variable.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: swap;
+    font-style: italic;
+}
+
+/* ===== FontAwesome 字体（如果CSS中已定义，这里可省略） ===== */
+/* FontAwesome 的字体文件由 font-awesome.min.css 自动引用 */
