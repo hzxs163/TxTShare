@@ -6,10 +6,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // ================================================================
-  //  规则0：manifest.json 不拦截（强制走网络，让浏览器识别）
+  //  规则0：特殊路径不拦截
   // ================================================================
+  // manifest.json 不拦截
   if (url.pathname === '/manifest.json') {
-    return; // 直接放行，不经过 Service Worker
+    return;
+  }
+  
+  // ✅ 短链接不拦截（8位字母数字）
+  if (url.pathname.match(/^\/[a-zA-Z0-9]{8}$/)) {
+    return;
   }
 
   // ================================================================
@@ -43,17 +49,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ================================================================
-  //  规则4：静态资源 - Cache First
+  //  规则4：静态资源 - Cache First（排除 manifest.json）
   // ================================================================
   const isStatic = 
     request.destination === 'style' ||
     request.destination === 'script' ||
     request.destination === 'font' ||
     request.destination === 'image' ||
-    url.pathname.match(/\.(css|js|woff2|woff|ttf|svg|png|ico|json)$/i)
-    url.pathname !== '/manifest.json'; // ✅ 排除 manifest.json
+    url.pathname.match(/\.(css|js|woff2|woff|ttf|svg|png|ico|json)$/i);
 
-  if (isStatic) {
+  // 只有是静态资源且不是 manifest.json 才处理
+  if (isStatic && url.pathname !== '/manifest.json') {
     event.respondWith(
       caches.match(request)
         .then((cached) => {
