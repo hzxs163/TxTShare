@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextSharing - 安全便捷的文本分享</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="copyNotification" class="copy-notification">
+        <i class="fa fa-check-circle"></i>
+        <span id="notificationText"></span>
+    </div>
+
+    <div class="container" id="contentContainer">
+        <!-- 内容将通过JS动态加载 -->
+    </div>
+
+    <script src="/js/view.js"></script>
+
+<!-- Manifest.json - PWA 配置 -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- iOS 专用配置 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TextShare">
+
+<!-- Windows 专用配置 -->
+<meta name="msapplication-TileColor" content="#3b82f6">
+<meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
+
+<!-- 主题颜色 -->
+<meta name="theme-color" content="#3b82f6">
+
+<!-- 应用名称 -->
+<meta name="application-name" content="文本分享工具">
+
+
+<script>
+    // ============================================================
+    //  注册 Service Worker
+    // ============================================================
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker
+                .register('/sw.js', { scope: '/' })
+                .then((registration) => {
+                    console.log('✅ Service Worker 注册成功:', registration);
+                })
+                .catch((error) => {
+                    console.error('❌ Service Worker 注册失败:', error);
+                });
+
+            // ============================================================
+            //  检查更新（每60秒检查一次）
+            // ============================================================
+            let refreshing = false;
+
+            // 当 SW 更新时刷新页面
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+
+            // 手动检查更新
+            setInterval(() => {
+                navigator.serviceWorker.getRegistration()
+                    .then((registration) => {
+                        if (registration) {
+                            registration.update();
+                            console.log('🔄 检查 SW 更新...');
+                        }
+                    });
+            }, 60000); // 每60秒检查一次
+        });
+    } else {
+        console.warn('⚠️ 当前浏览器不支持 Service Worker');
+    }
+</script>
+
+</body>
+</html>

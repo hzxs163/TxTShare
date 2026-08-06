@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本分享工具</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/tailwind.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/qrcode.min.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-8">
+            <div class="header-container">
+                <div></div>
+                <h1 class="text-3xl font-bold main-title">文本分享工具</h1>
+                <button id="themeToggle" class="theme-toggle">
+                    <i class="fa fa-moon-o"></i>
+                </button>
+            </div>
+        </header>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4 section-title">创建分享</h2>
+                
+                <form id="shareForm">
+                    <div class="form-group">
+                        <label for="title" class="form-label">标题（可选）</label>
+                        <input type="text" id="title" name="title" class="form-input" placeholder="给你的分享起个标题">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content" class="form-label">内容</label>
+                        <textarea id="content" name="content" class="input-area" placeholder="在这里输入你要分享的文本内容..." required></textarea>
+                        <div class="flex justify-between text-sm text-tertiary mt-1">
+                            <span id="charCount">0</span>
+                            <span>最大 10000 字符</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expire" class="form-label">过期时间</label>
+                        <select id="expire" name="expire" class="form-select">
+                            <option value="1">1天</option>
+                            <option value="7" selected>7天</option>
+                            <option value="30">30天</option>
+                        </select>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="burnAfterReading" name="burnAfterRead" class="form-checkbox">
+                        <label for="burnAfterReading" class="form-label">阅后即焚（查看一次后自动销毁）</label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="shareType" class="form-label">分享方式</label>
+                        <select id="shareType" name="shareType" class="form-select">
+                            <option value="both">二维码和链接</option>
+                            <option value="qrcode">仅二维码</option>
+                            <option value="link">仅链接</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <button type="submit" class="btn btn-success full-width-btn">
+                            <i class="fa fa-share-alt btn-icon"></i>
+                            创建分享
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4 section-title">预览</h2>
+                
+                <div id="previewContainer" class="preview-card">
+                    <div id="previewTitle" class="preview-title">无标题</div>
+                    <div id="previewContent" class="preview-content">在这里输入内容以查看预览...</div>
+                    <div id="previewMeta" class="preview-meta">
+                        创建于: <span id="previewCreatedAt"></span> | 
+                        过期于: <span id="previewExpiresAt"></span>
+                    </div>
+                    
+                    <div id="securityInfo" class="preview-meta mt-2">
+                        <span id="burnIndicator" class="hidden"><i class="fa fa-fire mr-1"></i> 阅后即焚</span>
+                    </div>
+                    
+                    <div id="shareOptions" class="hidden fade-in">
+                        <hr class="my-4 border-border-color">
+                        
+                        <h3 class="text-lg font-medium mb-2 section-title">分享选项</h3>
+                        
+                        <div id="qrcodeContainer" class="qrcode-container hidden">
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                                <img id="qrcodeImage" src="" alt="分享二维码" class="max-w-full h-auto mx-auto">
+                                <p class="text-center text-sm text-gray-500 mt-2">扫描二维码查看内容</p>
+                            </div>
+                        </div>
+                        
+                        <div id="linkContainer" class="share-link-container hidden">
+                            <span id="shareLink" class="share-link"></span>
+                            <button id="copyLinkBtn" class="copy-btn">
+                                <i class="fa fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-12 text-center text-gray-600 text-sm">
+            <p>&copy; 2025 文本分享工具 | 安全、私密、便捷</p>
+        </footer>
+    </div>
+    
+    <div id="clipboardMessage" class="clipboard-message">
+        <i class="fa fa-check-circle mr-2"></i>
+        <span>链接已复制到剪贴板</span>
+    </div>
+    
+    <script src="/js/app.js"></script>
+
+<!-- Manifest.json - PWA 配置 -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- iOS 专用配置 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TextShare">
+
+<!-- Windows 专用配置 -->
+<meta name="msapplication-TileColor" content="#3b82f6">
+<meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
+
+<!-- 主题颜色 -->
+<meta name="theme-color" content="#3b82f6">
+
+<!-- 应用名称 -->
+<meta name="application-name" content="文本分享工具">
+
+
+<script>
+    // ============================================================
+    //  注册 Service Worker
+    // ============================================================
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker
+                .register('/sw.js', { scope: '/' })
+                .then((registration) => {
+                    console.log('✅ Service Worker 注册成功:', registration);
+                })
+                .catch((error) => {
+                    console.error('❌ Service Worker 注册失败:', error);
+                });
+
+            // ============================================================
+            //  检查更新（每60秒检查一次）
+            // ============================================================
+            let refreshing = false;
+
+            // 当 SW 更新时刷新页面
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+
+            // 手动检查更新
+            setInterval(() => {
+                navigator.serviceWorker.getRegistration()
+                    .then((registration) => {
+                        if (registration) {
+                            registration.update();
+                            console.log('🔄 检查 SW 更新...');
+                        }
+                    });
+            }, 60000); // 每60秒检查一次
+        });
+    } else {
+        console.warn('⚠️ 当前浏览器不支持 Service Worker');
+    }
+</script>
+
+</body>
+</html>
