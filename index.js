@@ -1,24 +1,20 @@
-// ===== KV 绑定 =====
-// 部署时需在 Pages 设置中绑定 KV 命名空间，变量名：TEXT_SHARE_KV
+// ===== KV 绑定：TEXT_SHARE_KV =====
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // 跨域配置
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
-    // 处理 OPTIONS 预检请求
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // 路由分发
     try {
       if (path === "/api/create" && request.method === "POST") {
         return await handleCreate(request, env);
@@ -33,11 +29,7 @@ export default {
         });
       }
     } catch (error) {
-      console.error('路由错误:', error);
-      return new Response(JSON.stringify({
-        success: false,
-        message: error.message
-      }), {
+      return new Response(JSON.stringify({ success: false, message: error.message }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500
       });
@@ -45,40 +37,29 @@ export default {
   },
 };
 
-// ===== 生成8位唯一ID =====
 function generateUniqueId() {
-  const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let result = '';
   for (let i = 0; i < 8; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
 }
 
-// ===== 处理创建分享 =====
 async function handleCreate(request, env) {
   try {
-    // ✅ 解析 JSON 格式请求体（与前端匹配）
     const body = await request.json();
     const title = (body.title || '').trim();
     const content = (body.content || '').trim();
-    const expiresIn = body.expiresIn || 7 * 86400; // 默认7天（秒）
+    const expiresIn = body.expiresIn || 7 * 86400;
     const burnAfterRead = body.burnAfterRead || false;
 
-    // 验证内容
     if (!content) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: '内容不能为空'
-      }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        }
+      return new Response(JSON.stringify({ success: false, message: '内容不能为空' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
     }
 
-    // 生成唯一ID（确保不重复）
     let id;
     let attempts = 0;
     do {
@@ -87,86 +68,43 @@ async function handleCreate(request, env) {
       const existing = await env.TEXT_SHARE_KV.get(`share:${id}`);
       if (!existing) break;
       if (attempts > 10) {
-        return new Response(JSON.stringify({
-          success: false,
-          message: '生成ID失败，请重试'
-        }), {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
+        return new Response(JSON.stringify({ success: false, message: '生成ID失败' }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
       }
     } while (true);
 
-    // 计算过期时间
     const createdAt = Date.now();
     const expireDays = Math.ceil(expiresIn / 86400);
     const expiresAt = createdAt + (expiresIn * 1000);
 
-    // 保存数据到KV
-    const data = {
-      id,
-      title,
-      content,
-      createdAt,
-      expiresAt,
-      burnAfterRead,
-      viewed: false
-    };
-    
+    const data = { id, title, content, createdAt, expiresAt, burnAfterRead, viewed: false };
     await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data), {
-      expirationTtl: expireDays * 24 * 60 * 60 // KV 自动过期（秒）
+      expirationTtl: expireDays * 24 * 60 * 60
     });
 
-    // ✅ 使用 request.url 正确解析域名
     const protocol = request.url.startsWith('https') ? 'https' : 'http';
     const host = new URL(request.url).host;
     const shareUrl = `${protocol}://${host}/view.html?id=${id}`;
 
-    console.log(`✅ 分享创建成功: ${id}`);
-
-    return new Response(JSON.stringify({
-      success: true,
-      id,
-      shareUrl,
-      burnAfterRead
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
+    return new Response(JSON.stringify({ success: true, id, shareUrl, burnAfterRead }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   } catch (error) {
-    console.error('创建分享错误:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      message: '服务器处理失败: ' + error.message
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      },
+    return new Response(JSON.stringify({ success: false, message: error.message }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       status: 500
     });
   }
 }
 
-// ===== 处理查看分享 =====
 async function handleView(request, env) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
 
-  // 验证ID
   if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
-    return new Response(JSON.stringify({
-      success: false,
-      message: '无效的分享ID'
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      },
+    return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       status: 400
     });
   }
@@ -174,14 +112,8 @@ async function handleView(request, env) {
   try {
     const dataStr = await env.TEXT_SHARE_KV.get(`share:${id}`);
     if (!dataStr) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: '分享内容不存在或已过期'
-      }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        },
+      return new Response(JSON.stringify({ success: false, message: '分享不存在或已过期' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         status: 404
       });
     }
@@ -189,22 +121,14 @@ async function handleView(request, env) {
     const data = JSON.parse(dataStr);
     const now = Date.now();
 
-    // 检查过期
     if (data.expiresAt < now) {
       await env.TEXT_SHARE_KV.delete(`share:${id}`);
-      return new Response(JSON.stringify({
-        success: false,
-        message: '分享内容已过期'
-      }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        },
+      return new Response(JSON.stringify({ success: false, message: '分享已过期' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         status: 404
       });
     }
 
-    // 处理阅后即焚
     let isRead = false;
     if (data.burnAfterRead && !data.viewed) {
       data.viewed = true;
@@ -213,7 +137,6 @@ async function handleView(request, env) {
       isRead = true;
     }
 
-    // 计算剩余时间
     let expireTime = '';
     const diff = data.expiresAt - now;
     if (diff < 3600 * 1000) {
@@ -236,33 +159,21 @@ async function handleView(request, env) {
         isRead
       }
     }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   } catch (error) {
-    console.error('查看分享错误:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      message: '读取分享失败: ' + error.message
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      },
+    return new Response(JSON.stringify({ success: false, message: error.message }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       status: 500
     });
   }
 }
 
-// ===== 清理过期内容 =====
 async function handleCleanup(env) {
-  const now = Date.now();
   let deletedCount = 0;
-
   try {
     const list = await env.TEXT_SHARE_KV.list({ prefix: 'share:' });
+    const now = Date.now();
     for (const key of list.keys) {
       const dataStr = await env.TEXT_SHARE_KV.get(key.name);
       if (dataStr) {
@@ -274,16 +185,9 @@ async function handleCleanup(env) {
       }
     }
   } catch (error) {
-    console.error('清理错误:', error);
+    console.error('Cleanup error:', error);
   }
-
-  return new Response(JSON.stringify({
-    success: true,
-    deletedCount
-  }), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
-    }
+  return new Response(JSON.stringify({ success: true, deletedCount }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
   });
 }
