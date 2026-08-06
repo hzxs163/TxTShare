@@ -151,27 +151,38 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(textarea);
     }
 
-    // ===== Generate QR Code =====
+    // ===== Generate QR Code (修复版) =====
     function generateQRCode(text) {
         if (typeof QRCode === 'undefined') {
             console.error('QRCode library not loaded');
+            showClipboardMessage('二维码库加载失败，请刷新重试');
             return;
         }
-        QRCode.toDataURL(text, {
-            width: 200,
-            margin: 1,
-            color: {
-                dark: '#2d3748',
-                light: '#ffffff'
-            }
-        }, (err, url) => {
-            if (err) {
-                console.error('Failed to generate QR code:', err);
-                return;
-            }
-            qrcodeImage.src = url;
-            qrcodeContainer.classList.remove('hidden');
-        });
+        
+        try {
+            // 使用 toCanvas 方法（qrcode@1.5.1 支持）
+            const canvas = document.createElement('canvas');
+            QRCode.toCanvas(canvas, text, {
+                width: 200,
+                margin: 1,
+                color: {
+                    dark: '#2d3748',
+                    light: '#ffffff'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error('生成二维码失败:', error);
+                    showClipboardMessage('二维码生成失败: ' + error.message);
+                    return;
+                }
+                // 将 canvas 转为图片 URL
+                qrcodeImage.src = canvas.toDataURL('image/png');
+                qrcodeContainer.classList.remove('hidden');
+            });
+        } catch (error) {
+            console.error('QRCode 生成异常:', error);
+            showClipboardMessage('二维码生成异常，请重试');
+        }
     }
 
     // ===== Form Submit =====
