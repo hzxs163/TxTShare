@@ -50,7 +50,8 @@ self.addEventListener('fetch', (event) => {
     request.destination === 'script' ||
     request.destination === 'font' ||
     request.destination === 'image' ||
-    url.pathname.match(/\.(css|js|woff2|woff|ttf|svg|png|ico|json)$/i);
+    url.pathname.match(/\.(css|js|woff2|woff|ttf|svg|png|ico|json)$/i)
+    url.pathname !== '/manifest.json'; // ✅ 排除 manifest.json
 
   if (isStatic) {
     event.respondWith(
