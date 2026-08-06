@@ -1,0 +1,207 @@
+// ================================================================
+//  _worker.js - 统一入口
+//  处理：/api/create、/api/view、短链接 /xxxxxxxx
+// ================================================================
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    // 跨域配置
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    // 处理 OPTIONS 预检请求
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    try {
+      // ================================================================
+      //  路由1：创建分享 /api/create
+      // ================================================================
+      if (pathname === "/api/create" && request.method === "POST") {
+        return await handleCreate(request, env);
+      }
+
+      // ================================================================
+      //  路由2：查看分享 /api/view?id=xxx
+      // ================================================================
+      if (pathname.startsWith("/api/view")) {
+        return await handleView(request, env);
+      }
+
+      // ================================================================
+      //  路由3：短链接 /xxxxxxxx（8位字母数字）
+      // ================================================================
+      const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
+      if (shortIdMatch) {
+        const id = shortIdMatch[1];
+        // 把请求转换成 /api/view?id=xxx 格式
+        const newUrl = new URL(request.url);
+        newUrl.pathname = "/api/view";
+        newUrl.searchParams.set("id", id);
+        const newRequest = new Request(newUrl.toString(), request);
+        return await handleView(newRequest, env);
+      }
+
+      // ================================================================
+      //  路由4：其他请求 - 返回 404
+      // ================================================================
+      return new Response("Not Found", { status: 404 });
+
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: error.message
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500
+      });
+    }
+  },
+};
+
+// ================================================================
+//  handleCreate - 创建分享
+// ================================================================
+async function handleCreate(request, env) {
+  try {
+    const body = await request.json();
+    const title = (body.title || '').trim();
+    const content = (body.content || '').trim();
+    const expiresIn = body.expiresIn || 7 * 86400;
+    const burnAfterRead = body.burnAfterRead || false;
+
+    if (!content) {
+      return new Response(JSON.stringify({ success: false, message: '内容不能为空' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // 生成8位ID
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let id = '';
+    for (let i = 0; i < 8; i++) {
+      id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    // 检查ID是否存在
+    const existing = await env.TEXT_SHARE_KV.get(`share:${id}`);
+    if (existing) {
+      return new Response(JSON.stringify({ success: false, message: 'ID冲突，请重试' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    const createdAt = Date.now();
+    const expireDays = Math.ceil(expiresIn / 86400);
+    const expiresAt = createdAt + (expiresIn * 1000);
+
+    const data = { id, title, content, createdAt, expiresAt, burnAfterRead, viewed: false, viewCount: 0 };
+    await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data), {
+      expirationTtl: expireDays * 24 * 60 * 60
+    });
+
+    const protocol = request.url.startsWith('https') ? 'https' : 'http';
+    const host = new URL(request.url).host;
+    const shareUrl = `${protocol}://${host}/${id}`;
+
+    return new Response(JSON.stringify({ success: true, id, shareUrl, burnAfterRead }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, message: error.message }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      status: 500
+    });
+  }
+}
+
+// ================================================================
+//  handleView - 查看分享
+// ================================================================
+async function handleView(request, env) {
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+
+  if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
+    return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      status: 400
+    });
+  }
+
+  try {
+    const dataStr = await env.TEXT_SHARE_KV.get(`share:${id}`);
+    if (!dataStr) {
+      return new Response(JSON.stringify({ success: false, message: '分享不存在或已过期' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        status: 404
+      });
+    }
+
+    const data = JSON.parse(dataStr);
+    const now = Date.now();
+
+    if (data.expiresAt < now) {
+      await env.TEXT_SHARE_KV.delete(`share:${id}`);
+      return new Response(JSON.stringify({ success: false, message: '分享已过期' }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        status: 404
+      });
+    }
+
+    // 访问统计
+    if (!data.burnAfterRead || !data.viewed) {
+      data.viewCount = (data.viewCount || 0) + 1;
+      await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data));
+    }
+
+    // 阅后即焚
+    let isRead = false;
+    if (data.burnAfterRead && !data.viewed) {
+      data.viewed = true;
+      await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data));
+      await env.TEXT_SHARE_KV.delete(`share:${id}`);
+      isRead = true;
+    }
+
+    // 计算剩余时间
+    let expireTime = '';
+    const diff = data.expiresAt - now;
+    if (diff < 3600 * 1000) {
+      expireTime = Math.floor(diff / 60000) + '分钟';
+    } else if (diff < 86400 * 1000) {
+      expireTime = Math.floor(diff / 3600000) + '小时';
+    } else {
+      expireTime = Math.floor(diff / 86400000) + '天';
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        title: data.title,
+        content: data.content,
+        createdAt: new Date(data.createdAt).toLocaleString('zh-CN'),
+        expireTime: expireTime,
+        expiresAtTimestamp: data.expiresAt,
+        shareUrl: `${new URL(request.url).origin}/${id}`,
+        burnAfterRead: data.burnAfterRead,
+        isRead: isRead,
+        viewCount: data.viewCount || 0
+      }
+    }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, message: error.message }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      status: 500
+    });
+  }
+}
