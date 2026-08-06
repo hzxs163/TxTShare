@@ -30,6 +30,17 @@ export async function onRequest(context) {
       });
     }
 
+    // ================================================================
+    //  ✅ 新增：访问统计（阅后即焚已销毁的不再计数）
+    // ================================================================
+    if (!data.burnAfterRead || !data.viewed) {
+      data.viewCount = (data.viewCount || 0) + 1;
+      await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data));
+    }
+
+    // ================================================================
+    //  阅后即焚处理
+    // ================================================================
     let isRead = false;
     if (data.burnAfterRead && !data.viewed) {
       data.viewed = true;
@@ -38,6 +49,9 @@ export async function onRequest(context) {
       isRead = true;
     }
 
+    // ================================================================
+    //  计算剩余时间（用于显示）
+    // ================================================================
     let expireTime = '';
     const diff = data.expiresAt - now;
     if (diff < 3600 * 1000) {
@@ -48,16 +62,21 @@ export async function onRequest(context) {
       expireTime = Math.floor(diff / 86400000) + '天';
     }
 
+    // ================================================================
+    //  返回数据（新增 viewCount 和 expiresAtTimestamp）
+    // ================================================================
     return new Response(JSON.stringify({
       success: true,
       data: {
         title: data.title,
         content: data.content,
         createdAt: new Date(data.createdAt).toLocaleString('zh-CN'),
-        expireTime,
+        expireTime: expireTime,
+        expiresAtTimestamp: data.expiresAt,  // ✅ 新增：用于前端倒计时
         shareUrl: `${new URL(request.url).origin}/view.html?id=${id}`,
         burnAfterRead: data.burnAfterRead,
-        isRead
+        isRead: isRead,
+        viewCount: data.viewCount || 0  // ✅ 新增：浏览次数
       }
     }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
