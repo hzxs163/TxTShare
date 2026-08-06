@@ -1,10 +1,7 @@
 {
   "version": 1,
-  "include": [
-    "/*"
-  ],
+  "include": ["/*"],
   "exclude": [
-    "/api/*",
     "/css/*",
     "/js/*",
     "/fonts/*",
