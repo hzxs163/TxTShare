@@ -51,7 +51,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 16px;
             transition: background 0.3s ease, color 0.3s ease;
         }
 
@@ -61,32 +61,43 @@
             background: var(--card);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 40px 48px;
+            padding: 32px 40px;
             transition: background 0.3s ease, box-shadow 0.3s ease;
         }
 
+        /* ===== 头部 ===== */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.5px;
         }
 
-        .header .badge {
-            font-size: 12px;
+        .badge {
+            font-size: 11px;
             font-weight: 500;
             background: var(--accent);
             color: #fff;
-            padding: 4px 14px;
+            padding: 3px 12px;
             border-radius: 20px;
             letter-spacing: 0.3px;
+            white-space: nowrap;
         }
 
         .theme-toggle {
@@ -102,6 +113,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .theme-toggle:hover {
@@ -110,19 +122,20 @@
             transform: rotate(20deg);
         }
 
+        /* ===== 元信息条 ===== */
         .meta-bar {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px 24px;
-            padding: 12px 0 20px 0;
+            gap: 10px 20px;
+            padding: 10px 0 16px 0;
             border-bottom: 2px solid var(--border);
-            margin-bottom: 24px;
-            font-size: 14px;
+            margin-bottom: 20px;
+            font-size: 13px;
             color: var(--text-muted);
         }
 
         .meta-bar i {
-            margin-right: 6px;
+            margin-right: 5px;
             width: 16px;
             text-align: center;
         }
@@ -132,56 +145,59 @@
             font-weight: 500;
         }
 
+        /* ===== 阅后即焚横幅 ===== */
         .burn-notice {
             background: var(--burn-bg);
             color: var(--burn-text);
-            padding: 12px 18px;
+            padding: 10px 16px;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             border-left: 4px solid var(--burn-text);
         }
 
         .burn-notice i {
-            font-size: 18px;
+            font-size: 16px;
         }
 
+        /* ===== 标题 ===== */
         .title-display {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             line-height: 1.3;
             word-break: break-word;
         }
 
+        /* ===== 内容区 ===== */
         .content-box {
             background: var(--bg);
             border-radius: 12px;
-            padding: 20px 24px;
-            margin-bottom: 24px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
             border: 1px solid var(--border);
             transition: background 0.3s ease, border-color 0.3s ease;
         }
 
         .content-box .label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-muted);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .content-box .text-content {
-            font-size: 16px;
+            font-size: 15px;
             line-height: 1.8;
             color: var(--text-primary);
             white-space: pre-wrap;
@@ -189,18 +205,21 @@
             font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
         }
 
+        /* ===== 操作按钮组 - 居中 + 等宽 ===== */
         .actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 8px;
+            justify-content: center;
+            gap: 10px;
+            margin: 16px 0 8px 0;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
             border: none;
             border-radius: 10px;
             font-size: 14px;
@@ -209,6 +228,11 @@
             transition: all 0.25s ease;
             background: var(--border);
             color: var(--text-secondary);
+            flex: 1 1 0;
+            min-width: 100px;
+            max-width: 180px;
+            white-space: nowrap;
+            min-height: 44px;
         }
 
         .btn:hover {
@@ -237,25 +261,27 @@
         .btn-outline {
             background: transparent;
             border: 2px solid var(--border);
+            color: var(--text-secondary);
         }
 
         .btn-outline:hover {
             background: var(--border);
         }
 
+        /* ===== 分享链接区域 ===== */
         .link-section {
-            margin-top: 20px;
-            padding-top: 20px;
+            margin-top: 16px;
+            padding-top: 16px;
             border-top: 2px solid var(--border);
         }
 
         .link-section .label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-muted);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -273,10 +299,10 @@
 
         .link-box input {
             flex: 1;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border: none;
             background: transparent;
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-primary);
             outline: none;
             font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
@@ -284,52 +310,56 @@
         }
 
         .link-box .copy-btn {
-            padding: 12px 20px;
+            padding: 10px 16px;
             border: none;
             background: var(--accent);
             color: #fff;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
             transition: background 0.25s ease;
             display: flex;
             align-items: center;
             gap: 6px;
             font-weight: 500;
+            white-space: nowrap;
+            min-height: 44px;
         }
 
         .link-box .copy-btn:hover {
             background: var(--accent-hover);
         }
 
+        /* ===== 错误页面 ===== */
         .error-container {
             text-align: center;
-            padding: 48px 20px;
+            padding: 40px 16px;
         }
 
         .error-container i {
-            font-size: 56px;
+            font-size: 48px;
             color: var(--danger);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .error-container h2 {
-            font-size: 24px;
+            font-size: 22px;
             color: var(--text-primary);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .error-container p {
             color: var(--text-muted);
-            font-size: 16px;
+            font-size: 15px;
         }
 
+        /* ===== 通知弹窗 ===== */
         .copy-notification {
             position: fixed;
-            top: 24px;
-            right: 24px;
+            top: 20px;
+            right: 20px;
             background: var(--text-primary);
             color: var(--bg);
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 12px;
             font-weight: 500;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -340,7 +370,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .copy-notification.show {
@@ -348,7 +378,16 @@
             opacity: 1;
         }
 
-        @media (max-width: 600px) {
+        /* ================================================================ */
+        /*  响应式设计 - 移动端优先                                           */
+        /* ================================================================ */
+
+        /* 平板及以下 */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
             .container {
                 padding: 24px 20px;
             }
@@ -358,50 +397,142 @@
             }
 
             .title-display {
-                font-size: 22px;
+                font-size: 20px;
+            }
+
+            .content-box .text-content {
+                font-size: 14px;
+            }
+
+            .btn {
+                font-size: 13px;
+                padding: 8px 12px;
+                min-width: 80px;
+                flex: 1 1 0;
+            }
+        }
+
+        /* 手机 */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .container {
+                padding: 16px 12px;
+                border-radius: 12px;
+            }
+
+            .header {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .badge {
+                font-size: 10px;
+                padding: 2px 10px;
+            }
+
+            .theme-toggle {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .meta-bar {
+                font-size: 12px;
+                gap: 6px 14px;
+                padding: 8px 0 12px 0;
+            }
+
+            .title-display {
+                font-size: 18px;
+                margin-bottom: 12px;
             }
 
             .content-box {
-                padding: 16px;
+                padding: 12px 14px;
+                margin-bottom: 16px;
+            }
+
+            .content-box .text-content {
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            /* 按钮在手机上变成上下排列，每个占满宽度 */
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .btn {
+                flex: none;
+                width: 100%;
+                max-width: none;
+                padding: 10px 16px;
+                font-size: 14px;
+                justify-content: center;
+                min-height: 48px;
             }
 
             .link-box {
-                flex-wrap: wrap;
+                flex-direction: column;
             }
 
             .link-box input {
                 width: 100%;
-                padding: 12px 14px;
-                font-size: 13px;
+                padding: 10px 12px;
+                font-size: 12px;
+                border-radius: 10px 10px 0 0;
             }
 
             .link-box .copy-btn {
                 width: 100%;
                 justify-content: center;
-                padding: 12px;
+                padding: 10px 12px;
                 border-radius: 0 0 10px 10px;
+                font-size: 13px;
             }
 
-            .actions .btn {
-                flex: 1;
-                justify-content: center;
-                padding: 10px 14px;
+            .copy-notification {
+                top: 12px;
+                right: 12px;
+                left: 12px;
+                padding: 10px 16px;
                 font-size: 13px;
+                text-align: center;
+                justify-content: center;
             }
         }
 
-        @media (max-width: 400px) {
+        /* 极小屏（< 360px） */
+        @media (max-width: 360px) {
             .container {
-                padding: 16px 12px;
-            }
-
-            .meta-bar {
-                font-size: 12px;
-                gap: 8px 16px;
+                padding: 12px 8px;
             }
 
             .header h1 {
-                font-size: 18px;
+                font-size: 16px;
+            }
+
+            .title-display {
+                font-size: 16px;
+            }
+
+            .content-box .text-content {
+                font-size: 12px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 8px 12px;
+                min-height: 44px;
             }
         }
     </style>
@@ -421,44 +552,53 @@
         // ================================================================
         //  配置
         // ================================================================
-        const API_BASE_URL = ''; // 自动使用当前域名
+        const API_BASE_URL = '';
 
         // ================================================================
-        //  主题切换（全局版本，使用事件代理）
+        //  主题切换（事件代理 + 图标同步更新）
         // ================================================================
-        // 初始化主题
-        if (localStorage.getItem('theme') === 'dark' ||
-            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.removeAttribute('data-theme');
+
+        function initTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark' ||
+                (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            updateAllThemeIcons();
         }
 
-        // 使用事件代理监听所有 .theme-toggle 的点击
-        document.addEventListener('click', function(e) {
-            const btn = e.target.closest('.theme-toggle');
-            if (!btn) return;
+        function updateAllThemeIcons() {
+            const isDark = document.documentElement.hasAttribute('data-theme');
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = isDark ? 'fa fa-sun-o' : 'fa fa-moon-o';
+                }
+            });
+        }
 
+        function toggleTheme() {
             const html = document.documentElement;
-            const isDark = html.hasAttribute('data-theme');
-            const icon = btn.querySelector('i');
-
-            if (isDark) {
+            if (html.hasAttribute('data-theme')) {
                 html.removeAttribute('data-theme');
                 localStorage.setItem('theme', 'light');
-                if (icon) {
-                    icon.classList.remove('fa-sun-o');
-                    icon.classList.add('fa-moon-o');
-                }
             } else {
                 html.setAttribute('data-theme', 'dark');
                 localStorage.setItem('theme', 'dark');
-                if (icon) {
-                    icon.classList.remove('fa-moon-o');
-                    icon.classList.add('fa-sun-o');
-                }
+            }
+            updateAllThemeIcons();
+        }
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.theme-toggle');
+            if (btn) {
+                toggleTheme();
             }
         });
+
+        initTheme();
 
         // ================================================================
         //  通知
@@ -517,7 +657,6 @@
         function renderContent(data) {
             const container = document.getElementById('contentContainer');
 
-            // 计算状态显示
             let statusText = '';
             let statusIcon = 'fa-eye';
             if (data.isRead) {
@@ -531,13 +670,11 @@
                 statusIcon = 'fa-check-circle';
             }
 
-            // 判断当前主题，设置按钮图标
             const isDark = document.documentElement.hasAttribute('data-theme');
             const iconClass = isDark ? 'fa-sun-o' : 'fa-moon-o';
 
             let html = '';
 
-            // 阅后即焚横幅
             if (data.burnAfterRead && data.isRead) {
                 html += `
                     <div class="burn-notice">
@@ -547,10 +684,9 @@
                 `;
             }
 
-            // 头部
             html += `
                 <div class="header">
-                    <div style="display:flex;align-items:center;gap:14px;">
+                    <div class="header-left">
                         <h1>📄 分享的文本</h1>
                         <span class="badge">${data.burnAfterRead ? '🔥 阅后即焚' : '📌 普通分享'}</span>
                     </div>
@@ -560,7 +696,6 @@
                 </div>
             `;
 
-            // 元信息
             html += `
                 <div class="meta-bar">
                     <span><i class="fa fa-calendar"></i> 创建：<span class="highlight">${data.createdAt}</span></span>
@@ -569,12 +704,10 @@
                 </div>
             `;
 
-            // 标题
             if (data.title) {
                 html += `<div class="title-display">${escapeHtml(data.title)}</div>`;
             }
 
-            // 内容
             html += `
                 <div class="content-box">
                     <div class="label"><i class="fa fa-file-text-o"></i> 文本内容</div>
@@ -582,7 +715,6 @@
                 </div>
             `;
 
-            // 操作按钮
             html += `
                 <div class="actions">
                     <button class="btn btn-primary" onclick="copyText()">
@@ -597,7 +729,6 @@
                 </div>
             `;
 
-            // 分享链接
             html += `
                 <div class="link-section">
                     <div class="label"><i class="fa fa-link"></i> 分享链接</div>
@@ -613,18 +744,12 @@
             container.innerHTML = html;
         }
 
-        // ================================================================
-        //  安全防护
-        // ================================================================
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // ================================================================
-        //  错误渲染
-        // ================================================================
         function renderError(message) {
             document.getElementById('contentContainer').innerHTML = `
                 <div class="error-container">
@@ -635,9 +760,6 @@
             `;
         }
 
-        // ================================================================
-        //  加载数据
-        // ================================================================
         async function loadShareContent() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
