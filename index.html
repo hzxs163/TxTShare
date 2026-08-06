@@ -122,75 +122,35 @@
         <span>链接已复制到剪贴板</span>
     </div>
     
-    <!-- ============================================================ -->
-    <!-- ✅ 修复：将 API_BASE_URL 挂载到 window 对象，使其成为全局变量 -->
-    <!-- ============================================================ -->
     <script>
-        // 挂载到 window 对象，使 app.js 可以访问
+        // 全局 API 地址
         window.API_BASE_URL = window.location.origin;
-        // 如果需要固定域名，用下面这行替换上面那行：
-        // window.API_BASE_URL = 'https://txt.step.cc.cd';
-        console.log('✅ API_BASE_URL 已设置为:', window.API_BASE_URL);
+        console.log('✅ API_BASE_URL:', window.API_BASE_URL);
     </script>
     
     <script src="/js/app.js"></script>
 
-    <!-- Manifest.json - PWA 配置 -->
     <link rel="manifest" href="/manifest.json">
-
-    <!-- iOS 专用配置 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TextShare">
-
-    <!-- Windows 专用配置 -->
     <meta name="msapplication-TileColor" content="#3b82f6">
     <meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
-
-    <!-- 主题颜色 -->
     <meta name="theme-color" content="#3b82f6">
-
-    <!-- 应用名称 -->
     <meta name="application-name" content="文本分享工具">
 
     <script>
-        // ============================================================
-        //  注册 Service Worker
-        // ============================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker
-                    .register('/sw.js', { scope: '/' })
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
                     .then((registration) => {
-                        console.log('✅ Service Worker 注册成功:', registration);
+                        console.log('✅ Service Worker 注册成功');
                     })
                     .catch((error) => {
                         console.error('❌ Service Worker 注册失败:', error);
                     });
-
-                let refreshing = false;
-
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!refreshing) {
-                        refreshing = true;
-                        window.location.reload();
-                    }
-                });
-
-                setInterval(() => {
-                    navigator.serviceWorker.getRegistration()
-                        .then((registration) => {
-                            if (registration) {
-                                registration.update();
-                                console.log('🔄 检查 SW 更新...');
-                            }
-                        });
-                }, 60000);
             });
-        } else {
-            console.warn('⚠️ 当前浏览器不支持 Service Worker');
         }
     </script>
-
 </body>
 </html>
