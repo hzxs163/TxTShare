@@ -522,6 +522,20 @@
         function renderContent(data) {
             const container = document.getElementById('contentContainer');
 
+            // ===== 计算状态显示 =====
+            let statusText = '';
+            let statusIcon = 'fa-eye';
+            if (data.isRead) {
+                statusText = '已销毁（阅后即焚）';
+                statusIcon = 'fa-fire';
+            } else if (data.burnAfterRead) {
+                statusText = '等待查看（阅后即焚）';
+                statusIcon = 'fa-clock-o';
+            } else {
+                statusText = '正常（可重复查看）';
+                statusIcon = 'fa-check-circle';
+            }
+
             let html = '';
 
             // 阅后即焚横幅
@@ -529,7 +543,7 @@
                 html += `
                     <div class="burn-notice">
                         <i class="fa fa-fire"></i>
-                        <span>该内容为<strong>阅后即焚</strong>，关闭页面后将无法再次查看</span>
+                        <span>该内容为<strong>阅后即焚</strong>，已自动销毁，无法再次查看</span>
                     </div>
                 `;
             }
@@ -550,7 +564,7 @@
                 <div class="meta-bar">
                     <span><i class="fa fa-calendar"></i> 创建：<span class="highlight">${data.createdAt}</span></span>
                     <span><i class="fa fa-clock-o"></i> 剩余：<span class="highlight">${data.expireTime}</span></span>
-                    <span><i class="fa fa-eye"></i> 状态：<span class="highlight">${data.isRead ? '已查看' : '未查看'}</span></span>
+                    <span><i class="fa ${statusIcon}"></i> 状态：<span class="highlight">${statusText}</span></span>
                 </div>
             `;
 
