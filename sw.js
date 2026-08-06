@@ -1,4 +1,61 @@
 // ================================================================
+//  Service Worker - 带版本号管理
+// ================================================================
+
+const CACHE_VERSION = 'v4';
+const CACHE_NAME = `textshare-${CACHE_VERSION}`;
+
+// 预缓存资源列表
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/view.html',
+  '/css/style.css',
+  '/js/app.js',
+  '/manifest.json',
+  '/favicon.ico'
+];
+
+// ================================================================
+//  安装事件 - 预缓存核心资源
+// ================================================================
+self.addEventListener('install', (event) => {
+  console.log('[SW] 安装中...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        return Promise.allSettled(
+          STATIC_ASSETS.map(url => 
+            cache.add(url).catch(err => console.warn(`[SW] 缓存失败: ${url}`, err))
+          )
+        );
+      })
+      .then(() => self.skipWaiting())
+  );
+});
+
+// ================================================================
+//  激活事件 - 清理旧版本缓存
+// ================================================================
+self.addEventListener('activate', (event) => {
+  console.log('[SW] 激活中...');
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => {
+        return Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME && key.startsWith('textshare-'))
+            .map(key => {
+              console.log('[SW] 删除旧缓存:', key);
+              return caches.delete(key);
+            })
+        );
+      })
+      .then(() => self.clients.claim())
+  );
+});
+
+// ================================================================
 //  拦截请求 - 核心策略
 // ================================================================
 self.addEventListener('fetch', (event) => {
@@ -8,12 +65,9 @@ self.addEventListener('fetch', (event) => {
   // ================================================================
   //  规则0：特殊路径不拦截
   // ================================================================
-  // manifest.json 不拦截
   if (url.pathname === '/manifest.json') {
     return;
   }
-  
-  // ✅ 短链接不拦截（8位字母数字）
   if (url.pathname.match(/^\/[a-zA-Z0-9]{8}$/)) {
     return;
   }
@@ -26,7 +80,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ================================================================
-  //  规则2：只处理同源请求（不处理外部 CDN）
+  //  规则2：只处理同源请求
   // ================================================================
   if (url.origin !== self.location.origin) {
     return;
@@ -49,7 +103,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ================================================================
-  //  规则4：静态资源 - Cache First（排除 manifest.json）
+  //  规则4：静态资源 - Cache First
   // ================================================================
   const isStatic = 
     request.destination === 'style' ||
@@ -58,7 +112,6 @@ self.addEventListener('fetch', (event) => {
     request.destination === 'image' ||
     url.pathname.match(/\.(css|js|woff2|woff|ttf|svg|png|ico|json)$/i);
 
-  // 只有是静态资源且不是 manifest.json 才处理
   if (isStatic && url.pathname !== '/manifest.json') {
     event.respondWith(
       caches.match(request)
@@ -118,5 +171,4 @@ self.addEventListener('fetch', (event) => {
   // ================================================================
   //  规则6：其他请求 - 直接放行
   // ================================================================
-  // 不处理，浏览器直接请求网络
 });
