@@ -1,5 +1,4 @@
-// ===== Config =====
-// Use global variable from index.html, fallback to empty string
+// ===== 使用全局 API 地址 =====
 const API_BASE_URL = window.API_BASE_URL || '';
 
 // ===== DOM Elements =====
@@ -80,18 +79,14 @@ function updatePreview() {
     debounceTimer = setTimeout(() => {
         const title = titleInput.value.trim();
         const content = contentInput.value.trim();
-        
-        previewTitle.textContent = title || 'No Title';
-        previewContent.textContent = content || 'Enter content to preview...';
-        
+        previewTitle.textContent = title || '无标题';
+        previewContent.textContent = content || '在这里输入内容以查看预览...';
         charCount.textContent = content.length;
-        
         if (burnAfterReadingCheckbox.checked) {
             burnIndicator.classList.remove('hidden');
         } else {
             burnIndicator.classList.add('hidden');
         }
-        
         localStorage.setItem('draft_content', content);
         localStorage.setItem('draft_title', title);
     }, 300);
@@ -109,7 +104,8 @@ function restoreDraft() {
 
 // ===== Copy Functions =====
 function showClipboardMessage(text) {
-    clipboardMessage.querySelector('span').textContent = text || 'Link copied to clipboard';
+    const span = clipboardMessage.querySelector('span');
+    if (span) span.textContent = text || '已复制到剪贴板';
     clipboardMessage.classList.add('show');
     setTimeout(() => {
         clipboardMessage.classList.remove('show');
@@ -139,7 +135,7 @@ function fallbackCopy(text, message) {
         document.execCommand('copy');
         showClipboardMessage(message);
     } catch (e) {
-        alert('Copy failed, please copy manually');
+        alert('复制失败，请手动复制');
     }
     document.body.removeChild(textarea);
 }
@@ -175,44 +171,35 @@ shareForm.addEventListener('submit', async (e) => {
     
     const now = Date.now();
     if (now - lastSubmitTime < 5000) {
-        showClipboardMessage('Too frequent, please wait');
+        showClipboardMessage('操作过于频繁，请稍后再试');
         return;
     }
     lastSubmitTime = now;
     
     const content = contentInput.value.trim();
-    const title = titleInput.value.trim() || 'Shared Content';
+    const title = titleInput.value.trim() || '分享内容';
     
     if (!content) {
-        showClipboardMessage('Please enter content');
+        showClipboardMessage('请输入要分享的内容');
         return;
     }
     
     if (content.length > 10000) {
-        showClipboardMessage('Content too long, max 10000 chars');
+        showClipboardMessage('内容过长，请缩减至10000字符以内');
         return;
     }
     
-    const formData = {
-        title: title,
-        content: content,
-        expireDays: parseInt(expireSelect.value),
-        burnAfterRead: burnAfterReadingCheckbox.checked,
-        shareType: shareTypeSelect.value
-    };
-    
     try {
-        // Use relative path, handled by Pages Functions
         const response = await fetch('/api/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                title: formData.title,
-                content: formData.content,
-                expiresIn: formData.expireDays * 86400,
-                burnAfterRead: formData.burnAfterRead
+                title: title,
+                content: content,
+                expiresIn: parseInt(expireSelect.value) * 86400,
+                burnAfterRead: burnAfterReadingCheckbox.checked
             })
         });
         
@@ -222,6 +209,10 @@ shareForm.addEventListener('submit', async (e) => {
         }
         
         const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message || '创建失败');
+        }
         
         localStorage.removeItem('draft_content');
         localStorage.removeItem('draft_title');
@@ -244,11 +235,11 @@ shareForm.addEventListener('submit', async (e) => {
             qrcodeContainer.classList.add('hidden');
         }
         
-        showClipboardMessage('Share created successfully!');
+        showClipboardMessage('🎉 分享创建成功！');
         
     } catch (error) {
-        console.error('Create share failed:', error);
-        showClipboardMessage('Create failed: ' + error.message);
+        console.error('创建分享失败:', error);
+        showClipboardMessage('创建失败: ' + error.message);
     }
 });
 
@@ -256,7 +247,7 @@ shareForm.addEventListener('submit', async (e) => {
 copyLinkBtn.addEventListener('click', () => {
     const link = shareLink.textContent;
     if (link) {
-        copyToClipboard(link, 'Link copied to clipboard');
+        copyToClipboard(link, '链接已复制到剪贴板');
     }
 });
 
@@ -275,4 +266,4 @@ expireSelect.addEventListener('change', () => {
 });
 burnAfterReadingCheckbox.addEventListener('change', updatePreview);
 
-console.log('app.js loaded successfully');
+console.log('✅ app.js 加载完成');
