@@ -47,7 +47,8 @@ export async function onRequest(context) {
 
     const protocol = request.url.startsWith('https') ? 'https' : 'http';
     const host = new URL(request.url).host;
-    const shareUrl = `${protocol}://${host}/view.html?id=${id}`;
+    // ✅ 短链接：去掉 /view.html?id=，直接使用 /{id}
+    const shareUrl = `${protocol}://${host}/${id}`;
 
     return new Response(JSON.stringify({ success: true, id, shareUrl, burnAfterRead }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
