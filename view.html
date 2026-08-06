@@ -5,33 +5,444 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TextSharing - 安全便捷的文本分享</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/css/fonts.css">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        /* ===== 基础重置与变量 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --border: #e5e7eb;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            --radius: 16px;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --burn-bg: #fef3c7;
+            --burn-text: #92400e;
+        }
+
+        [data-theme="dark"] {
+            --bg: #111827;
+            --card: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #6b7280;
+            --border: #374151;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            --burn-bg: #451a03;
+            --burn-text: #fbbf24;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-secondary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* ===== 卡片容器 ===== */
+        .container {
+            max-width: 720px;
+            width: 100%;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 40px 48px;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* ===== 头部 ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .header .badge {
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--accent);
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+        }
+
+        .theme-toggle {
+            background: var(--border);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: rotate(20deg);
+        }
+
+        /* ===== 元信息条 ===== */
+        .meta-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            padding: 12px 0 20px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .meta-bar i {
+            margin-right: 6px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .meta-bar .highlight {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ===== 阅后即焚横幅 ===== */
+        .burn-notice {
+            background: var(--burn-bg);
+            color: var(--burn-text);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--burn-text);
+        }
+
+        .burn-notice i {
+            font-size: 18px;
+        }
+
+        /* ===== 标题 ===== */
+        .title-display {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        /* ===== 内容区 ===== */
+        .content-box {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .content-box .label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .content-box .text-content {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+        }
+
+        /* ===== 操作按钮组 ===== */
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--border);
+        }
+
+        /* ===== 分享链接区域 ===== */
+        .link-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .link-section .label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .link-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .link-box input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+            min-width: 0;
+        }
+
+        .link-box .copy-btn {
+            padding: 12px 20px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .link-box .copy-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* ===== 错误页面 ===== */
+        .error-container {
+            text-align: center;
+            padding: 48px 20px;
+        }
+
+        .error-container i {
+            font-size: 56px;
+            color: var(--danger);
+            margin-bottom: 16px;
+        }
+
+        .error-container h2 {
+            font-size: 24px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .error-container p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* ===== 通知弹窗 ===== */
+        .copy-notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--text-primary);
+            color: var(--bg);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .copy-notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .title-display {
+                font-size: 22px;
+            }
+
+            .content-box {
+                padding: 16px;
+            }
+
+            .link-box {
+                flex-wrap: wrap;
+            }
+
+            .link-box input {
+                width: 100%;
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+
+            .link-box .copy-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 12px;
+                border-radius: 0 0 10px 10px;
+            }
+
+            .actions .btn {
+                flex: 1;
+                justify-content: center;
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 16px 12px;
+            }
+
+            .meta-bar {
+                font-size: 12px;
+                gap: 8px 16px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
 <body>
+
     <div id="copyNotification" class="copy-notification">
         <i class="fa fa-check-circle"></i>
-        <span id="notificationText"></span>
+        <span id="notificationText">已复制</span>
     </div>
 
     <div class="container" id="contentContainer">
-        <!-- 内容将通过JS动态加载 -->
+        <!-- 内容由 JavaScript 动态渲染 -->
     </div>
 
     <script>
-        // ===== 配置 =====
-        // ✅ 使用空字符串，自动适配当前域名（txt.step.cc.cd 或 xxx.pages.dev）
-        const API_BASE_URL = '';
+        // ================================================================
+        //  配置
+        // ================================================================
+        const API_BASE_URL = ''; // 自动使用当前域名
 
-        // ===== 主题切换 =====
+        // ================================================================
+        //  主题切换
+        // ================================================================
         const themeToggle = document.createElement('button');
-        themeToggle.id = 'themeToggle';
         themeToggle.className = 'theme-toggle';
         themeToggle.innerHTML = '<i class="fa fa-moon-o"></i>';
 
         const htmlElement = document.documentElement;
-        if (localStorage.getItem('theme') === 'dark' || 
+        if (localStorage.getItem('theme') === 'dark' ||
             (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             htmlElement.setAttribute('data-theme', 'dark');
             themeToggle.querySelector('i').classList.remove('fa-moon-o');
@@ -39,7 +450,8 @@
         }
 
         themeToggle.addEventListener('click', () => {
-            if (htmlElement.hasAttribute('data-theme')) {
+            const isDark = htmlElement.hasAttribute('data-theme');
+            if (isDark) {
                 htmlElement.removeAttribute('data-theme');
                 localStorage.setItem('theme', 'light');
                 themeToggle.querySelector('i').classList.remove('fa-sun-o');
@@ -52,177 +464,195 @@
             }
         });
 
-        // ===== 通知 =====
+        // ================================================================
+        //  通知
+        // ================================================================
         function showNotification(message) {
-            const notification = document.getElementById('copyNotification');
-            const notificationText = document.getElementById('notificationText');
-            notificationText.textContent = message;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
+            const el = document.getElementById('copyNotification');
+            document.getElementById('notificationText').textContent = message;
+            el.classList.add('show');
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.remove('show'), 3000);
         }
 
-        // ===== 复制功能 =====
+        // ================================================================
+        //  复制功能
+        // ================================================================
         function copyText() {
-            const text = document.querySelector('.text-input')?.textContent;
-            if (text) {
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        showNotification('文本已复制');
-                    }).catch(() => {
-                        fallbackCopy(text, '文本已复制');
-                    });
-                } else {
-                    fallbackCopy(text, '文本已复制');
-                }
-            }
+            const el = document.querySelector('.text-content');
+            if (!el) return;
+            const text = el.textContent;
+            copyToClipboard(text, '文本已复制');
         }
 
         function copyLink() {
-            const link = window.location.href;
+            const input = document.getElementById('shareLinkInput');
+            if (!input) return;
+            copyToClipboard(input.value, '链接已复制');
+        }
+
+        function copyToClipboard(text, message) {
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(link).then(() => {
-                    showNotification('链接已复制');
-                }).catch(() => {
-                    fallbackCopy(link, '链接已复制');
-                });
+                navigator.clipboard.writeText(text).then(() => showNotification(message))
+                    .catch(() => fallbackCopy(text, message));
             } else {
-                fallbackCopy(link, '链接已复制');
+                fallbackCopy(text, message);
             }
         }
 
         function fallbackCopy(text, message) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
             try {
                 document.execCommand('copy');
                 showNotification(message);
-            } catch (e) {
-                showNotification('复制失败，请手动复制');
+            } catch (_) {
+                alert('复制失败，请手动复制');
             }
-            document.body.removeChild(textarea);
+            document.body.removeChild(ta);
         }
 
-        // ===== 渲染内容 =====
+        // ================================================================
+        //  渲染页面
+        // ================================================================
         function renderContent(data) {
             const container = document.getElementById('contentContainer');
-            
+
             let html = '';
-            
-            // 阅后即焚提示
+
+            // 阅后即焚横幅
             if (data.burnAfterRead && data.isRead) {
                 html += `
-                <div class="burn-notice">
-                    <i class="fa fa-exclamation-triangle"></i>
-                    <span>该内容为阅后即焚，关闭页面后将无法再次查看</span>
-                </div>
+                    <div class="burn-notice">
+                        <i class="fa fa-fire"></i>
+                        <span>该内容为<strong>阅后即焚</strong>，关闭页面后将无法再次查看</span>
+                    </div>
                 `;
             }
-            
+
             // 头部
             html += `
-            <div class="header">
-                <h1>分享的文本</h1>
-                ${themeToggle.outerHTML}
-            </div>
-            
-            <div class="time-info">
-                创建时间：${data.createdAt}
-                ${data.expireTime}后过期
-            </div>
+                <div class="header">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <h1>📄 分享的文本</h1>
+                        <span class="badge">${data.burnAfterRead ? '🔥 阅后即焚' : '📌 普通分享'}</span>
+                    </div>
+                    ${themeToggle.outerHTML}
+                </div>
             `;
-            
+
+            // 元信息
+            html += `
+                <div class="meta-bar">
+                    <span><i class="fa fa-calendar"></i> 创建：<span class="highlight">${data.createdAt}</span></span>
+                    <span><i class="fa fa-clock-o"></i> 剩余：<span class="highlight">${data.expireTime}</span></span>
+                    <span><i class="fa fa-eye"></i> 状态：<span class="highlight">${data.isRead ? '已查看' : '未查看'}</span></span>
+                </div>
+            `;
+
             // 标题
             if (data.title) {
-                html += `<div class="text-title">${escapeHtml(data.title)}</div>`;
+                html += `<div class="title-display">${escapeHtml(data.title)}</div>`;
             }
-            
-            // 文本内容
+
+            // 内容
             html += `
-            <div class="section">
-                <div class="section-header">
-                    <div class="section-title">文本内容</div>
-                    <button class="copy-btn copy-text-btn" onclick="copyText()">复制文本</button>
-                </div>
                 <div class="content-box">
-                    <div class="text-input">${escapeHtml(data.content)}</div>
+                    <div class="label"><i class="fa fa-file-text-o"></i> 文本内容</div>
+                    <div class="text-content">${escapeHtml(data.content)}</div>
                 </div>
-            </div>
-            
-            <div class="divider"></div>
-            
-            <div class="section">
-                <div class="section-header">
-                    <div class="section-title">分享链接</div>
-                    <button class="copy-btn copy-link-btn" onclick="copyLink()">复制链接</button>
-                </div>
-                <div class="content-box">
-                    <div class="text-input">${escapeHtml(data.shareUrl)}</div>
-                </div>
-            </div>
             `;
-            
+
+            // 操作按钮
+            html += `
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="copyText()">
+                        <i class="fa fa-copy"></i> 复制文本
+                    </button>
+                    <button class="btn btn-success" onclick="copyLink()">
+                        <i class="fa fa-link"></i> 复制链接
+                    </button>
+                    <button class="btn btn-outline" onclick="window.print()">
+                        <i class="fa fa-print"></i> 打印
+                    </button>
+                </div>
+            `;
+
+            // 分享链接
+            html += `
+                <div class="link-section">
+                    <div class="label"><i class="fa fa-link"></i> 分享链接</div>
+                    <div class="link-box">
+                        <input type="text" id="shareLinkInput" value="${escapeHtml(data.shareUrl)}" readonly>
+                        <button class="copy-btn" onclick="copyLink()">
+                            <i class="fa fa-copy"></i> 复制
+                        </button>
+                    </div>
+                </div>
+            `;
+
             container.innerHTML = html;
-            
+
             // 重新绑定主题切换事件
-            const newThemeToggle = document.getElementById('themeToggle');
-            if (newThemeToggle) {
-                newThemeToggle.addEventListener('click', themeToggle.onclick);
+            const newToggle = container.querySelector('.theme-toggle');
+            if (newToggle) {
+                newToggle.addEventListener('click', themeToggle.onclick);
             }
         }
 
-        // ===== XSS防护 =====
+        // ================================================================
+        //  安全防护
+        // ================================================================
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // ===== 渲染错误 =====
+        // ================================================================
+        //  错误渲染
+        // ================================================================
         function renderError(message) {
-            const container = document.getElementById('contentContainer');
-            container.innerHTML = `
-            <div class="error-container">
-                <i class="fa fa-times-circle"></i>
-                <h2>出错了</h2>
-                <p>${escapeHtml(message)}</p>
-            </div>
+            document.getElementById('contentContainer').innerHTML = `
+                <div class="error-container">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <h2>出错了</h2>
+                    <p>${escapeHtml(message)}</p>
+                </div>
             `;
         }
 
-        // ===== 加载分享内容 =====
+        // ================================================================
+        //  加载数据
+        // ================================================================
         async function loadShareContent() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
-            
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
             if (!id) {
-                renderError('无效的分享ID');
+                renderError('无效的分享 ID，请检查链接');
                 return;
             }
-            
+
             try {
-                // ✅ 使用相对路径 /api/view（由 Pages Functions 处理）
-                const response = await fetch(`/api/view?id=${id}`);
-                const result = await response.json();
-                
+                const resp = await fetch(`/api/view?id=${id}`);
+                const result = await resp.json();
+
                 if (result.success) {
                     renderContent(result.data);
                 } else {
-                    renderError(result.message || '分享内容不存在或已过期');
+                    renderError(result.message || '分享不存在或已过期');
                 }
-            } catch (error) {
+            } catch (_) {
                 renderError('加载失败，请检查网络或稍后重试');
-                console.error('加载分享失败:', error);
             }
         }
 
-        // ===== 初始化 =====
-        window.addEventListener('DOMContentLoaded', loadShareContent);
+        document.addEventListener('DOMContentLoaded', loadShareContent);
     </script>
 </body>
 </html>
