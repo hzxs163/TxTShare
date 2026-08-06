@@ -631,6 +631,58 @@
         }
 
         // ================================================================
+        //  ✅ 新增：倒计时功能
+        // ================================================================
+        let countdownInterval = null;
+
+        function startCountdown(expiresAtTimestamp) {
+            const el = document.getElementById('countdownDisplay');
+            if (!el) return;
+
+            // 清除之前的定时器
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+
+            function updateCountdown() {
+                const now = Date.now();
+                const diff = expiresAtTimestamp - now;
+
+                if (diff <= 0) {
+                    el.textContent = '已过期';
+                    if (countdownInterval) {
+                        clearInterval(countdownInterval);
+                        countdownInterval = null;
+                    }
+                    return;
+                }
+
+                const days = Math.floor(diff / 86400000);
+                const hours = Math.floor((diff % 86400000) / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+
+                let text = '';
+                if (days > 0) {
+                    text = `${days}天 ${hours}时 ${minutes}分 ${seconds}秒`;
+                } else if (hours > 0) {
+                    text = `${hours}时 ${minutes}分 ${seconds}秒`;
+                } else if (minutes > 0) {
+                    text = `${minutes}分 ${seconds}秒`;
+                } else {
+                    text = `${seconds}秒`;
+                }
+                el.textContent = text;
+            }
+
+            // 立即更新一次
+            updateCountdown();
+            // 每秒更新
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // ================================================================
         //  渲染页面
         // ================================================================
         function renderContent(data) {
@@ -675,11 +727,13 @@
                 </div>
             `;
 
+            // ===== 元信息条：新增「浏览次数」和「倒计时」 =====
             html += `
                 <div class="meta-bar">
                     <span><i class="fa fa-calendar"></i> 创建：<span class="highlight">${data.createdAt}</span></span>
-                    <span><i class="fa fa-clock-o"></i> 剩余：<span class="highlight">${data.expireTime}</span></span>
+                    <span><i class="fa fa-clock-o"></i> 剩余：<span class="highlight" id="countdownDisplay">${data.expireTime}</span></span>
                     <span><i class="fa ${statusIcon}"></i> 状态：<span class="highlight">${statusText}</span></span>
+                    <span><i class="fa fa-eye"></i> 浏览：<span class="highlight">${data.viewCount || 0} 次</span></span>
                 </div>
             `;
 
@@ -721,6 +775,11 @@
             `;
 
             container.innerHTML = html;
+
+            // ===== 启动倒计时 =====
+            if (data.expiresAtTimestamp) {
+                startCountdown(data.expiresAtTimestamp);
+            }
         }
 
         function escapeHtml(text) {
