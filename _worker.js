@@ -42,7 +42,7 @@ export default {
       if (shortIdMatch) {
         const id = shortIdMatch[1];
         // ✅ 重定向到 view.html，并带上 id 参数
-        const redirectUrl = `/view.html?id=${id}`;
+        const redirectUrl = new URL(`/view.html?id=${id}`, request.url).toString();
         return Response.redirect(redirectUrl, 302);
       }
 
