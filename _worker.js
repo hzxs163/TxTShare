@@ -12,24 +12,29 @@ export default {
     //  1. 先处理 API 请求
     // ================================================================
     if (pathname.startsWith('/api/')) {
+      // 跨域配置
       const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       };
 
+      // 处理 OPTIONS 预检
       if (request.method === "OPTIONS") {
         return new Response(null, { headers: corsHeaders });
       }
 
+      // 路由：创建分享
       if (pathname === "/api/create" && request.method === "POST") {
         return await handleCreate(request, env);
       }
 
+      // 路由：查看分享
       if (pathname.startsWith("/api/view")) {
         return await handleView(request, env);
       }
 
+      // 其他 API 请求返回 404
       return new Response(JSON.stringify({ success: false, message: 'API Not Found' }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -37,36 +42,23 @@ export default {
     }
 
     // ================================================================
-    //  2. 处理短链接 ( /xxxxxxxx ) - 8位字母数字
-    //    直接重定向到 view.html
+    //  2. 处理短链接 ( /xxxxxxxx )
     // ================================================================
     const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
     if (shortIdMatch) {
       const id = shortIdMatch[1];
-      // 直接跳转到 view.html，带 id 参数
+      // 重定向到 view.html 并由前端解析 ID
       const redirectUrl = new URL(`/view.html?id=${id}`, request.url).toString();
       return Response.redirect(redirectUrl, 302);
     }
 
     // ================================================================
     //  3. 所有其他请求（如 /view.html, /css/xxx.css）
-    //     安全地交给静态托管
+    //     安全地交给静态托管，不再经过 Worker
     // ================================================================
     return env.ASSETS.fetch(request);
   },
 };
-
-// ================================================================
-//  SHA-256 哈希函数
-// ================================================================
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 // ================================================================
 //  handleCreate - 创建分享
@@ -76,12 +68,12 @@ async function handleCreate(request, env) {
     const body = await request.json();
     const title = (body.title || '').trim();
     const content = (body.content || '').trim();
+    // 如果 expiresIn === 0，表示永不过期，设置一个很大的值（100年）
     let expiresIn = body.expiresIn;
     if (expiresIn === 0) {
-        expiresIn = 100 * 365 * 86400;
+        expiresIn = 100 * 365 * 86400; // 100年
     }
     const burnAfterRead = body.burnAfterRead || false;
-    const password = body.password || '';
 
     if (!content) {
       return new Response(JSON.stringify({ success: false, message: '内容不能为空' }), {
@@ -89,6 +81,7 @@ async function handleCreate(request, env) {
       });
     }
 
+    // 生成8位ID
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let id = '';
     for (let i = 0; i < 8; i++) {
@@ -106,15 +99,9 @@ async function handleCreate(request, env) {
     const expireDays = Math.ceil(expiresIn / 86400);
     const expiresAt = createdAt + (expiresIn * 1000);
 
-    let passwordHash = '';
-    if (password && password.length > 0) {
-      passwordHash = await hashPassword(password);
-    }
-
     const data = { 
       id, title, content, createdAt, expiresAt, 
-      burnAfterRead, viewed: false, viewCount: 0,
-      password: passwordHash
+      burnAfterRead, viewed: false, viewCount: 0 
     };
     
     await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data), {
@@ -144,7 +131,6 @@ async function handleCreate(request, env) {
 async function handleView(request, env) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
-  const userPassword = url.searchParams.get('password') || '';
 
   if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
     return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
@@ -171,32 +157,6 @@ async function handleView(request, env) {
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         status: 404
       });
-    }
-
-    // 密码验证
-    if (data.password && data.password.length > 0) {
-      if (!userPassword) {
-        return new Response(JSON.stringify({
-          success: false,
-          message: '需要密码',
-          needPassword: true
-        }), {
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-          status: 401
-        });
-      }
-
-      const hashedUserPassword = await hashPassword(userPassword);
-      if (data.password !== hashedUserPassword) {
-        return new Response(JSON.stringify({
-          success: false,
-          message: '密码错误，请重试',
-          needPassword: true
-        }), {
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-          status: 401
-        });
-      }
     }
 
     // 访问统计
