@@ -47,13 +47,20 @@ export default {
     const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
     if (shortIdMatch) {
       const id = shortIdMatch[1];
-      // 重定向到 view.html 并由前端解析 ID
       const redirectUrl = new URL(`/view.html?id=${id}`, request.url).toString();
       return Response.redirect(redirectUrl, 302);
     }
 
     // ================================================================
-    //  3. 所有其他请求（如 /view.html, /css/xxx.css）
+    //  3. 处理 /view 重定向到 /view.html
+    // ================================================================
+    if (pathname === '/view') {
+        const redirectUrl = new URL(`/view.html${url.search}`, request.url).toString();
+        return Response.redirect(redirectUrl, 301);
+    }
+
+    // ================================================================
+    //  4. 所有其他请求（如 /view.html, /css/xxx.css）
     //     安全地交给静态托管，不再经过 Worker
     // ================================================================
     return env.ASSETS.fetch(request);
@@ -86,7 +93,7 @@ async function handleCreate(request, env) {
         expiresIn = 100 * 365 * 86400; // 100年
     }
     const burnAfterRead = body.burnAfterRead || false;
-    const password = body.password || ''; // ✅ 新增：获取密码
+    const password = body.password || '';
 
     if (!content) {
       return new Response(JSON.stringify({ success: false, message: '内容不能为空' }), {
@@ -112,7 +119,6 @@ async function handleCreate(request, env) {
     const expireDays = Math.ceil(expiresIn / 86400);
     const expiresAt = createdAt + (expiresIn * 1000);
 
-    // ✅ 新增：如果设置了密码，进行哈希后存储
     let passwordHash = '';
     if (password && password.length > 0) {
       passwordHash = await hashPassword(password);
@@ -121,7 +127,7 @@ async function handleCreate(request, env) {
     const data = { 
       id, title, content, createdAt, expiresAt, 
       burnAfterRead, viewed: false, viewCount: 0,
-      password: passwordHash  // ✅ 新增：存储密码哈希
+      password: passwordHash
     };
     
     await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data), {
@@ -151,7 +157,7 @@ async function handleCreate(request, env) {
 async function handleView(request, env) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
-  const userPassword = url.searchParams.get('password') || ''; // ✅ 新增：获取用户输入的密码
+  const userPassword = url.searchParams.get('password') || '';
 
   if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
     return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
@@ -181,10 +187,9 @@ async function handleView(request, env) {
     }
 
     // ================================================================
-    //  ✅ 新增：密码验证
+    //  密码验证
     // ================================================================
     if (data.password && data.password.length > 0) {
-      // 如果用户没有提供密码，返回需要密码的标识
       if (!userPassword) {
         return new Response(JSON.stringify({
           success: false,
@@ -196,7 +201,6 @@ async function handleView(request, env) {
         });
       }
 
-      // 验证密码
       const hashedUserPassword = await hashPassword(userPassword);
       if (data.password !== hashedUserPassword) {
         return new Response(JSON.stringify({
@@ -210,7 +214,7 @@ async function handleView(request, env) {
       }
     }
 
-    // 访问统计（只有密码验证通过后才计入）
+    // 访问统计
     if (!data.burnAfterRead || !data.viewed) {
       data.viewCount = (data.viewCount || 0) + 1;
       await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data));
