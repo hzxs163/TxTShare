@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const clipboardMessage = document.getElementById('clipboardMessage');
     const shareForm = document.getElementById('shareForm');
     const charCount = document.getElementById('charCount');
+    // ✅ 新增：获取密码输入框
+    const passwordInput = document.getElementById('password');
 
     // 如果 shareForm 不存在，直接报错退出
     if (!shareForm) {
@@ -76,7 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateExpireTime() {
         const now = new Date();
-        const expireDays = parseInt(expireSelect.value);
+        // 注意：expireSelect 的值现在是文字（如"1天"），不再用于计算
+        // 预览中的过期时间由后端返回，这里只做显示占位
+        const expireDays = 7; // 默认7天
         const expiresAt = new Date(now);
         expiresAt.setDate(expiresAt.getDate() + expireDays);
         previewExpiresAt.textContent = formatDateTime(expiresAt);
@@ -185,6 +189,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ===== 过期时间映射 =====
+    function getExpiresIn(value) {
+        const map = {
+            '5分钟': 5 * 60,
+            '10分钟': 10 * 60,
+            '1小时': 3600,
+            '1天': 86400,
+            '1周': 7 * 86400,
+            '1个月': 30 * 86400,
+            '1年': 365 * 86400,
+            '永不过期': 0
+        };
+        return map[value] || 7 * 86400;
+    }
+
     // ===== Form Submit =====
     let lastSubmitTime = 0;
 
@@ -201,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const content = contentInput.value.trim();
         const title = titleInput.value.trim() || '分享内容';
+        const password = passwordInput ? passwordInput.value.trim() : '';
 
         if (!content) {
             showClipboardMessage('请输入要分享的内容');
@@ -222,23 +242,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     title: title,
                     content: content,
-
-                    expiresIn: (() => {
-                        const val = expireSelect.value;
-                        const map = {
-                            '5分钟': 5 * 60,
-                            '10分钟': 10 * 60,
-                            '1小时': 3600,
-                            '1天': 86400,
-                            '1周': 7 * 86400,
-                            '1个月': 30 * 86400,
-                            '1年': 365 * 86400,
-                            '永不过期': 0
-                        };
-                        return map[val] || 7 * 86400;
-                    })(),
-                    
-                    burnAfterRead: burnAfterReadingCheckbox.checked
+                    expiresIn: getExpiresIn(expireSelect.value),
+                    burnAfterRead: burnAfterReadingCheckbox.checked,
+                    password: password  // ✅ 新增：发送密码
                 })
             });
 
@@ -305,6 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
     titleInput.addEventListener('input', updatePreview);
     contentInput.addEventListener('input', updatePreview);
     expireSelect.addEventListener('change', () => {
+        // 预览中的过期时间显示（仅做展示，实际过期由后端控制）
         updateExpireTime();
         updatePreview();
     });
