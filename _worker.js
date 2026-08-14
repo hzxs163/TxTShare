@@ -12,29 +12,24 @@ export default {
     //  1. 先处理 API 请求
     // ================================================================
     if (pathname.startsWith('/api/')) {
-      // 跨域配置
       const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       };
 
-      // 处理 OPTIONS 预检
       if (request.method === "OPTIONS") {
         return new Response(null, { headers: corsHeaders });
       }
 
-      // 路由：创建分享
       if (pathname === "/api/create" && request.method === "POST") {
         return await handleCreate(request, env);
       }
 
-      // 路由：查看分享
       if (pathname.startsWith("/api/view")) {
         return await handleView(request, env);
       }
 
-      // 其他 API 请求返回 404
       return new Response(JSON.stringify({ success: false, message: 'API Not Found' }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -43,25 +38,19 @@ export default {
 
     // ================================================================
     //  2. 处理短链接 ( /xxxxxxxx ) - 8位字母数字
+    //    直接重定向到 view.html
     // ================================================================
     const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
     if (shortIdMatch) {
       const id = shortIdMatch[1];
+      // 直接跳转到 view.html，带 id 参数
       const redirectUrl = new URL(`/view.html?id=${id}`, request.url).toString();
       return Response.redirect(redirectUrl, 302);
     }
 
     // ================================================================
-    //  3. 处理 /view 重定向到 /view.html
-    // ================================================================
-    if (pathname === '/view') {
-      const redirectUrl = new URL(`/view.html${url.search}`, request.url).toString();
-      return Response.redirect(redirectUrl, 301);
-    }
-
-    // ================================================================
-    //  4. 所有其他请求（如 /view.html, /css/xxx.css）
-    //     安全地交给静态托管，不再经过 Worker
+    //  3. 所有其他请求（如 /view.html, /css/xxx.css）
+    //     安全地交给静态托管
     // ================================================================
     return env.ASSETS.fetch(request);
   },
@@ -87,10 +76,9 @@ async function handleCreate(request, env) {
     const body = await request.json();
     const title = (body.title || '').trim();
     const content = (body.content || '').trim();
-    // 如果 expiresIn === 0，表示永不过期，设置一个很大的值（100年）
     let expiresIn = body.expiresIn;
     if (expiresIn === 0) {
-        expiresIn = 100 * 365 * 86400; // 100年
+        expiresIn = 100 * 365 * 86400;
     }
     const burnAfterRead = body.burnAfterRead || false;
     const password = body.password || '';
@@ -101,7 +89,6 @@ async function handleCreate(request, env) {
       });
     }
 
-    // 生成8位ID
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let id = '';
     for (let i = 0; i < 8; i++) {
@@ -186,9 +173,7 @@ async function handleView(request, env) {
       });
     }
 
-    // ================================================================
-    //  密码验证
-    // ================================================================
+    // 密码验证
     if (data.password && data.password.length > 0) {
       if (!userPassword) {
         return new Response(JSON.stringify({
