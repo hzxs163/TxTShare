@@ -42,7 +42,7 @@ export default {
     }
 
     // ================================================================
-    //  2. 处理短链接 ( /xxxxxxxx )
+    //  2. 处理短链接 ( /xxxxxxxx ) - 8位字母数字
     // ================================================================
     const shortIdMatch = pathname.match(/^\/([a-zA-Z0-9]{8})$/);
     if (shortIdMatch) {
@@ -55,8 +55,8 @@ export default {
     //  3. 处理 /view 重定向到 /view.html
     // ================================================================
     if (pathname === '/view') {
-        const redirectUrl = new URL(`/view.html${url.search}`, request.url).toString();
-        return Response.redirect(redirectUrl, 301);
+      const redirectUrl = new URL(`/view.html${url.search}`, request.url).toString();
+      return Response.redirect(redirectUrl, 301);
     }
 
     // ================================================================
