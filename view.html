@@ -932,6 +932,7 @@
 
         // ================================================================
         //  ✅ 核心：加载分享内容（支持两种方式获取 ID + 密码验证）
+        //  ✅ 修复：禁止缓存 + 清空残留内容
         // ================================================================
         async function loadShareContent() {
             // 1. 先从查询参数获取 id (?id=xxx)
@@ -952,8 +953,23 @@
                 return;
             }
 
+            // ✅ 先清空容器，显示加载中，防止残留数据
+            document.getElementById('contentContainer').innerHTML = `
+                <div style="text-align:center;padding:40px;color:var(--text-muted);">
+                    <i class="fa fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>
+                    加载中...
+                </div>
+            `;
+
             try {
-                const resp = await fetch(`/api/view?id=${id}`);
+                // ✅ 添加禁止缓存的请求头，防止 Service Worker 返回旧数据
+                const resp = await fetch(`/api/view?id=${id}`, {
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
                 const result = await resp.json();
 
                 if (result.success) {
