@@ -222,7 +222,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     title: title,
                     content: content,
-                    expiresIn: parseInt(expireSelect.value) * 86400,
+
+                    expiresIn: (() => {
+                        const val = expireSelect.value;
+                        const map = {
+                            '5分钟': 5 * 60,
+                            '10分钟': 10 * 60,
+                            '1小时': 3600,
+                            '1天': 86400,
+                            '1周': 7 * 86400,
+                            '1个月': 30 * 86400,
+                            '1年': 365 * 86400,
+                            '永不过期': 0
+                        };
+                        return map[val] || 7 * 86400;
+                    })(),
+                    
                     burnAfterRead: burnAfterReadingCheckbox.checked
                 })
             });
