@@ -61,6 +61,18 @@ export default {
 };
 
 // ================================================================
+//  SHA-256 哈希函数
+// ================================================================
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ================================================================
 //  handleCreate - 创建分享
 // ================================================================
 async function handleCreate(request, env) {
@@ -74,6 +86,7 @@ async function handleCreate(request, env) {
         expiresIn = 100 * 365 * 86400; // 100年
     }
     const burnAfterRead = body.burnAfterRead || false;
+    const password = body.password || ''; // ✅ 新增：获取密码
 
     if (!content) {
       return new Response(JSON.stringify({ success: false, message: '内容不能为空' }), {
@@ -99,9 +112,16 @@ async function handleCreate(request, env) {
     const expireDays = Math.ceil(expiresIn / 86400);
     const expiresAt = createdAt + (expiresIn * 1000);
 
+    // ✅ 新增：如果设置了密码，进行哈希后存储
+    let passwordHash = '';
+    if (password && password.length > 0) {
+      passwordHash = await hashPassword(password);
+    }
+
     const data = { 
       id, title, content, createdAt, expiresAt, 
-      burnAfterRead, viewed: false, viewCount: 0 
+      burnAfterRead, viewed: false, viewCount: 0,
+      password: passwordHash  // ✅ 新增：存储密码哈希
     };
     
     await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data), {
@@ -131,6 +151,7 @@ async function handleCreate(request, env) {
 async function handleView(request, env) {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
+  const userPassword = url.searchParams.get('password') || ''; // ✅ 新增：获取用户输入的密码
 
   if (!id || !/^[a-zA-Z0-9]{8}$/.test(id)) {
     return new Response(JSON.stringify({ success: false, message: '无效的分享ID' }), {
@@ -159,7 +180,37 @@ async function handleView(request, env) {
       });
     }
 
-    // 访问统计
+    // ================================================================
+    //  ✅ 新增：密码验证
+    // ================================================================
+    if (data.password && data.password.length > 0) {
+      // 如果用户没有提供密码，返回需要密码的标识
+      if (!userPassword) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: '需要密码',
+          needPassword: true
+        }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          status: 401
+        });
+      }
+
+      // 验证密码
+      const hashedUserPassword = await hashPassword(userPassword);
+      if (data.password !== hashedUserPassword) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: '密码错误，请重试',
+          needPassword: true
+        }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          status: 401
+        });
+      }
+    }
+
+    // 访问统计（只有密码验证通过后才计入）
     if (!data.burnAfterRead || !data.viewed) {
       data.viewCount = (data.viewCount || 0) + 1;
       await env.TEXT_SHARE_KV.put(`share:${id}`, JSON.stringify(data));
