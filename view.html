@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TextSharing - 安全便捷的文.本.分享</title>
+    <title>TextSharing - 安全便捷的文本分享</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
     
     <!-- ===== 预连接和预加载 ===== -->
@@ -358,6 +358,70 @@
         .error-container p {
             color: var(--text-muted);
             font-size: 15px;
+        }
+
+        /* ===== 密码验证界面 ===== */
+        .password-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .password-container .lock-icon {
+            font-size: 48px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        .password-container h2 {
+            font-size: 22px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .password-container .sub-text {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+        .password-container .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        .password-container .input-group input {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--bg);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .password-container .input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .password-container .input-group .verify-btn {
+            padding: 12px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.25s ease;
+        }
+        .password-container .input-group .verify-btn:hover {
+            background: var(--accent-hover);
+        }
+        .password-container .error-msg {
+            color: var(--danger);
+            font-size: 14px;
+            display: none;
+            margin-top: 8px;
+        }
+        .password-container .error-msg.show {
+            display: block;
         }
 
         /* ===== 通知弹窗 ===== */
@@ -794,7 +858,80 @@
         }
 
         // ================================================================
-        //  ✅ 核心：加载分享内容（支持两种方式获取 ID）
+        //  ✅ 密码验证界面
+        // ================================================================
+        let currentShareId = null;
+
+        function showPasswordPrompt(id) {
+            currentShareId = id;
+            const container = document.getElementById('contentContainer');
+            container.innerHTML = `
+                <div class="password-container">
+                    <div class="lock-icon"><i class="fa fa-lock"></i></div>
+                    <h2>请输入访问密码</h2>
+                    <p class="sub-text">该分享设置了密码保护</p>
+                    <div class="input-group">
+                        <input type="password" id="passwordInput" placeholder="请输入密码" autofocus>
+                        <button class="verify-btn" onclick="verifyPassword()">
+                            <i class="fa fa-check"></i> 验证密码
+                        </button>
+                        <div class="error-msg" id="passwordError">
+                            <i class="fa fa-exclamation-circle"></i> <span id="passwordErrorText">密码错误，请重试</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 回车键触发验证
+            document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    verifyPassword();
+                }
+            });
+        }
+
+        async function verifyPassword() {
+            const input = document.getElementById('passwordInput');
+            const errorEl = document.getElementById('passwordError');
+            const errorText = document.getElementById('passwordErrorText');
+            const password = input.value.trim();
+
+            if (!password) {
+                errorText.textContent = '请输入密码';
+                errorEl.classList.add('show');
+                input.focus();
+                return;
+            }
+
+            // 隐藏之前的错误
+            errorEl.classList.remove('show');
+            input.disabled = true;
+
+            try {
+                const resp = await fetch(`/api/view?id=${currentShareId}&password=${encodeURIComponent(password)}`);
+                const result = await resp.json();
+
+                if (result.success) {
+                    renderContent(result.data);
+                } else if (result.needPassword) {
+                    errorText.textContent = result.message || '密码错误，请重试';
+                    errorEl.classList.add('show');
+                    input.value = '';
+                    input.disabled = false;
+                    input.focus();
+                } else {
+                    renderError(result.message || '加载失败，请稍后重试');
+                }
+            } catch (_) {
+                errorText.textContent = '验证失败，请检查网络后重试';
+                errorEl.classList.add('show');
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        // ================================================================
+        //  ✅ 核心：加载分享内容（支持两种方式获取 ID + 密码验证）
         // ================================================================
         async function loadShareContent() {
             // 1. 先从查询参数获取 id (?id=xxx)
@@ -821,6 +958,9 @@
 
                 if (result.success) {
                     renderContent(result.data);
+                } else if (result.needPassword) {
+                    // ✅ 需要密码
+                    showPasswordPrompt(id);
                 } else {
                     renderError(result.message || '分享不存在或已过期');
                 }
