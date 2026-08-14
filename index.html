@@ -154,18 +154,7 @@
     <meta name="theme-color" content="#3b82f6">
     <meta name="application-name" content="文本分享工具">
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                    .then((registration) => {
-                        console.log('✅ Service Worker 注册成功');
-                    })
-                    .catch((error) => {
-                        console.error('❌ Service Worker 注册失败:', error);
-                    });
-            });
-        }
+
     </script>
 </body>
 </html>
