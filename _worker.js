@@ -68,7 +68,11 @@ async function handleCreate(request, env) {
     const body = await request.json();
     const title = (body.title || '').trim();
     const content = (body.content || '').trim();
-    const expiresIn = body.expiresIn || 7 * 86400;
+    // 如果 expiresIn === 0，表示永不过期，设置一个很大的值（100年）
+    let expiresIn = body.expiresIn;
+    if (expiresIn === 0) {
+        expiresIn = 100 * 365 * 86400; // 100年
+    }
     const burnAfterRead = body.burnAfterRead || false;
 
     if (!content) {
