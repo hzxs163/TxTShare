@@ -2,7 +2,7 @@
 //  Service Worker - 带版本号管理
 // ================================================================
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `textshare-${CACHE_VERSION}`;
 
 // 预缓存资源列表
@@ -65,10 +65,16 @@ self.addEventListener('fetch', (event) => {
   // ================================================================
   //  规则0：特殊路径不拦截
   // ================================================================
+  // manifest.json 不拦截
   if (url.pathname === '/manifest.json') {
     return;
   }
+  // 短链接不拦截（8位字母数字）
   if (url.pathname.match(/^\/[a-zA-Z0-9]{8}$/)) {
+    return;
+  }
+  // ✅ API 请求不拦截（包括 /api/view 和 /api/create）
+  if (url.pathname.startsWith('/api/')) {
     return;
   }
 
@@ -87,23 +93,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ================================================================
-  //  规则3：API 请求 - Network Only
-  // ================================================================
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .catch(() => {
-          return new Response(
-            JSON.stringify({ success: false, message: '网络连接失败' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          );
-        })
-    );
-    return;
-  }
-
-  // ================================================================
-  //  规则4：静态资源 - Cache First
+  //  规则3：静态资源 - Cache First
   // ================================================================
   const isStatic = 
     request.destination === 'style' ||
@@ -145,7 +135,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ================================================================
-  //  规则5：HTML 页面 - Network First
+  //  规则4：HTML 页面 - Network First
   // ================================================================
   if (request.destination === 'document' || url.pathname.endsWith('.html')) {
     event.respondWith(
@@ -169,6 +159,6 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ================================================================
-  //  规则6：其他请求 - 直接放行
+  //  规则5：其他请求 - 直接放行
   // ================================================================
 });
