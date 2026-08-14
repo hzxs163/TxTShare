@@ -43,27 +43,18 @@
                         </div>
                     </div>
                     
-                    <!-- ✅ 修改：过期时间和密码放在同一行 -->
                     <div class="form-group">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                            <div>
-                                <label for="expire" class="form-label">过期时间</label>
-                                <select id="expire" name="expire" class="form-select">
-                                    <option value="5分钟">5分钟</option>
-                                    <option value="10分钟">10分钟</option>
-                                    <option value="1小时">1小时</option>
-                                    <option value="1天">1天</option>
-                                    <option value="1周" selected>1周</option>
-                                    <option value="1个月">1个月</option>
-                                    <option value="1年">1年</option>
-                                    <option value="永不过期">永不过期</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="password" class="form-label">访问密码（可选）</label>
-                                <input type="text" id="password" name="password" class="form-input" placeholder="留空表示无密码">
-                            </div>
-                        </div>
+                        <label for="expire" class="form-label">过期时间</label>
+                        <select id="expire" name="expire" class="form-select">
+                            <option value="5分钟">5分钟</option>
+                            <option value="10分钟">10分钟</option>
+                            <option value="1小时">1小时</option>
+                            <option value="1天">1天</option>
+                            <option value="1周" selected>1周</option>
+                            <option value="1个月">1个月</option>
+                            <option value="1年">1年</option>
+                            <option value="永不过期">永不过期</option>
+                        </select>
                     </div>
                     
                     <div class="checkbox-group">
@@ -154,7 +145,18 @@
     <meta name="theme-color" content="#3b82f6">
     <meta name="application-name" content="文本分享工具">
 
-
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then((registration) => {
+                        console.log('✅ Service Worker 注册成功');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker 注册失败:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
